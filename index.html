@@ -80,36 +80,22 @@
         const Home = (props) => (<Icon {...props}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>);
 
         // --- Mock Data Generators ---
+        // 면접 질문 생성 함수: role과 관계없이 항상 프론트엔드 기술 질문 3개를 반환
         const generateQuestions = (role, company) => {
-            if (role.includes("프론트") || role.includes("Front") || role.includes("front")) {
-                const feQuestions = [
-                    "브라우저 주소창에 URL을 입력하고 엔터를 쳤을 때, 화면이 렌더링되기까지의 과정을 CS 관점에서 상세히 설명해보세요.",
-                    "React의 Virtual DOM이 작동하는 구체적인 원리와, 이것이 실제 DOM 조작보다 효율적인 이유를 설명해보세요.",
-                    "프론트엔드 성능 최적화를 위해 본인이 실제로 적용해본 기법은 무엇이며, 그로 인해 성능이 얼마나 개선되었나요?",
-                    "JavaScript의 이벤트 루프(Event Loop)와 비동기 처리 메커니즘(Microtask/Macrotask Queue)에 대해 설명해보세요.",
-                    `우리 ${company} 서비스의 프론트엔드 기술 스택이나 UI/UX 측면에서 개선이 필요하다고 느낀 점이 있다면 솔직하게 말해보세요.`
-                ];
-                return feQuestions.slice(0, 3);
-            }
-            const baseQuestions = [
-                "간단하게 자기소개 한번 해보세요. 1분 안으로 짧게.",
-                `${company}에 지원한 솔직한 이유가 뭡니까? 연봉 때문은 아닐 테고.`,
-                "최근에 겪은 가장 큰 기술적 실패 경험과 그걸로 뭘 배웠는지 말해보세요."
+            const feQuestions = [
+                "브라우저 주소창에 URL을 입력하고 엔터를 쳤을 때, 화면이 렌더링되기까지의 과정을 CS 관점에서 상세히 설명해보세요.",
+                "React의 Virtual DOM이 작동하는 구체적인 원리와, 이것이 실제 DOM 조작보다 효율적인 이유를 설명해보세요.",
+                "프론트엔드 성능 최적화를 위해 본인이 실제로 적용해본 기법은 무엇이며, 그로 인해 성능이 얼마나 개선되었나요?",
+                "JavaScript의 이벤트 루프(Event Loop)와 비동기 처리 메커니즘(Microtask/Macrotask Queue)에 대해 설명해보세요.",
+                `우리 ${company} 서비스의 프론트엔드 기술 스택이나 UI/UX 측면에서 개선이 필요하다고 느낀 점이 있다면 솔직하게 말해보세요.`,
+                "CSS-in-JS와 전통적인 CSS의 장단점을 비교하고, 프로젝트에서 어떤 방식을 선택할지 그 이유를 설명해보세요.",
+                "웹 접근성(Web Accessibility)을 구현하기 위해 어떤 방법들을 사용해보셨나요? 구체적인 예시를 들어 설명해주세요.",
+                "상태 관리 라이브러리(Redux, Zustand, Jotai 등)를 선택할 때 고려하는 요소는 무엇인가요?",
+                "Cross-Site Scripting(XSS) 공격을 방지하기 위한 프론트엔드 보안 기법에 대해 설명해보세요.",
+                "Code Splitting과 Lazy Loading을 통해 번들 크기를 최적화한 경험이 있다면 공유해주세요."
             ];
-            let techQuestions = [];
-             if (role.includes("백엔드") || role.includes("Back")) {
-                techQuestions = [
-                    "RESTful API와 GraphQL의 차이점을 설명하고 본인은 뭘 선호하는지 말해보세요.",
-                    "DB 인덱싱이 뭔지 설명하고, 무조건 많이 걸면 왜 안 좋은지 설명해보세요.",
-                    "트래픽이 갑자기 10배로 튀면 서버 구조를 어떻게 바꿀 겁니까?"
-                ];
-            } else {
-                techQuestions = [
-                    "본인 직무에서 가장 중요하게 생각하는 역량이 뭡니까?",
-                    "팀원과 의견 충돌이 났을 때 본인의 고집을 꺾은 경험이 있나요?"
-                ];
-            }
-            return [...baseQuestions, ...techQuestions].sort(() => Math.random() - 0.5).slice(0, 3);
+            // 질문을 랜덤하게 섞어서 3개 선택
+            return feQuestions.sort(() => Math.random() - 0.5).slice(0, 3);
         };
 
         const voices = [
