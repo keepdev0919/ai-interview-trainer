@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntelliView: AI 면접 트레이너</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap');
+        
+        body { 
+            font-family: 'Noto Sans KR', sans-serif; 
+            background-color: #111; 
+            color: #eee; 
+            letter-spacing: 0.05em; 
+        }
+
+        .neon-text { text-shadow: 0 0 10px rgba(0, 255, 127, 0.7); }
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 255, 127, 0.5);
+            position: absolute;
+            animation: scan 3s linear infinite;
+            z-index: 10;
+        }
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        .recording-dot {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 255, 127, 0.2);
+            border-color: #4ade80;
+        }
+        /* Fade In Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Icon Components ---
+        const Icon = ({ children, className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+        const Github = (props) => (<Icon {...props}><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" /><path d="M9 18c-4.51 2-5-2-7-2" /></Icon>);
+        const Briefcase = (props) => (<Icon {...props}><rect width="20" height="14" x="2" y="7" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></Icon>);
+        const Building = (props) => (<Icon {...props}><rect width="16" height="20" x="4" y="2" rx="2" ry="2" /><path d="M9 22v-4h6v4" /><path d="M8 6h.01" /><path d="M16 6h.01" /><path d="M12 6h.01" /><path d="M12 10h.01" /><path d="M12 14h.01" /><path d="M16 10h.01" /><path d="M16 14h.01" /><path d="M8 10h.01" /><path d="M8 14h.01" /></Icon>);
+        const Camera = (props) => (<Icon {...props}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></Icon>);
+        const ChevronRight = (props) => (<Icon {...props}><path d="m9 18 6-6-6-6" /></Icon>);
+        const BarChart2 = (props) => (<Icon {...props}><line x1="18" x2="18" y1="20" y2="10" /><line x1="12" x2="12" y1="20" y2="4" /><line x1="6" x2="6" y1="20" y2="14" /></Icon>);
+        const Award = (props) => (<Icon {...props}><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></Icon>);
+        const AlertTriangle = (props) => (<Icon {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" x2="12" y1="9" y2="13" /><line x1="12" x2="12.01" y1="17" y2="17" /></Icon>);
+        const Mic = (props) => (<Icon {...props}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/><line x1="8" x2="16" y1="22" y2="22"/></Icon>);
+        const CreditCard = (props) => (<Icon {...props}><rect width="22" height="16" x="1" y="4" rx="2" ry="2" /><line x1="1" x2="23" y1="10" y2="10" /></Icon>);
+        const Crown = (props) => (<Icon {...props}><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" /></Icon>);
+        const ArrowLeft = (props) => (<Icon {...props}><line x1="19" x2="5" y1="12" y2="12" /><polyline points="12 19 5 12 12 5" /></Icon>);
+        const FileText = (props) => (<Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><line x1="10" x2="8" y1="9" y2="9" /></Icon>);
+        const Home = (props) => (<Icon {...props}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>);
+
+        // --- Mock Data Generators ---
+        const generateQuestions = (role, company) => {
+            if (role.includes("프론트") || role.includes("Front") || role.includes("front")) {
+                const feQuestions = [
+                    "브라우저 주소창에 URL을 입력하고 엔터를 쳤을 때, 화면이 렌더링되기까지의 과정을 CS 관점에서 상세히 설명해보세요.",
+                    "React의 Virtual DOM이 작동하는 구체적인 원리와, 이것이 실제 DOM 조작보다 효율적인 이유를 설명해보세요.",
+                    "프론트엔드 성능 최적화를 위해 본인이 실제로 적용해본 기법은 무엇이며, 그로 인해 성능이 얼마나 개선되었나요?",
+                    "JavaScript의 이벤트 루프(Event Loop)와 비동기 처리 메커니즘(Microtask/Macrotask Queue)에 대해 설명해보세요.",
+                    `우리 ${company} 서비스의 프론트엔드 기술 스택이나 UI/UX 측면에서 개선이 필요하다고 느낀 점이 있다면 솔직하게 말해보세요.`
+                ];
+                return feQuestions.slice(0, 3);
+            }
+            const baseQuestions = [
+                "간단하게 자기소개 한번 해보세요. 1분 안으로 짧게.",
+                `${company}에 지원한 솔직한 이유가 뭡니까? 연봉 때문은 아닐 테고.`,
+                "최근에 겪은 가장 큰 기술적 실패 경험과 그걸로 뭘 배웠는지 말해보세요."
+            ];
+            let techQuestions = [];
+             if (role.includes("백엔드") || role.includes("Back")) {
+                techQuestions = [
+                    "RESTful API와 GraphQL의 차이점을 설명하고 본인은 뭘 선호하는지 말해보세요.",
+                    "DB 인덱싱이 뭔지 설명하고, 무조건 많이 걸면 왜 안 좋은지 설명해보세요.",
+                    "트래픽이 갑자기 10배로 튀면 서버 구조를 어떻게 바꿀 겁니까?"
+                ];
+            } else {
+                techQuestions = [
+                    "본인 직무에서 가장 중요하게 생각하는 역량이 뭡니까?",
+                    "팀원과 의견 충돌이 났을 때 본인의 고집을 꺾은 경험이 있나요?"
+                ];
+            }
+            return [...baseQuestions, ...techQuestions].sort(() => Math.random() - 0.5).slice(0, 3);
+        };
+
+        const voices = [
+            { lang: 'ko-KR', pitch: 1.0, rate: 1.0, name: "냉철한 팀장" },
+            { lang: 'ko-KR', pitch: 0.8, rate: 1.1, name: "깐깐한 임원" },
+            { lang: 'ko-KR', pitch: 1.2, rate: 0.9, name: "압박하는 실무자" }
+        ];
+
+        // --- New Components: Landing & History ---
+
+        const LandingPage = ({ onStart, onHistory }) => {
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-900 text-white relative overflow-hidden">
+                    <div className="absolute inset-0 z-0">
+                         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse"></div>
+                         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+                    </div>
+
+                    <div className="z-10 text-center max-w-2xl w-full animate-fade-in">
+                        <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 mb-4 tracking-widest neon-text">IntelliView</h1>
+                        <p className="text-xl text-gray-400 mb-12 tracking-wider">AI 기반 실전 면접 트레이닝 솔루션</p>
+
+                        <div className="flex flex-col md:flex-row gap-6 justify-center w-full">
+                            <button 
+                                onClick={onStart}
+                                className="group flex-1 bg-gray-800 hover:bg-gray-700 border border-green-500/50 hover:border-green-400 p-8 rounded-2xl transition-all hover:scale-105 shadow-[0_0_20px_rgba(0,255,127,0.1)] hover:shadow-[0_0_30px_rgba(0,255,127,0.3)] flex flex-col items-center justify-center gap-4"
+                            >
+                                <Camera className="w-12 h-12 text-green-400 group-hover:text-green-300" />
+                                <div className="text-2xl font-bold text-white group-hover:text-green-300">면접 시작</div>
+                                <span className="text-sm text-gray-500">실전 모의 면접 시작하기</span>
+                            </button>
+
+                            <button 
+                                onClick={onHistory}
+                                className="group flex-1 bg-gray-800 hover:bg-gray-700 border border-blue-500/50 hover:border-blue-400 p-8 rounded-2xl transition-all hover:scale-105 shadow-[0_0_20px_rgba(59,130,246,0.1)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] flex flex-col items-center justify-center gap-4"
+                            >
+                                <FileText className="w-12 h-12 text-blue-400 group-hover:text-blue-300" />
+                                <div className="text-2xl font-bold text-white group-hover:text-blue-300">면접 기록</div>
+                                <span className="text-sm text-gray-500">지난 분석 리포트 확인</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const HistoryPage = ({ history, onBack }) => {
+            return (
+                <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8 animate-fade-in">
+                    <div className="max-w-6xl mx-auto">
+                        <div className="flex items-center mb-8">
+                            <h2 className="text-3xl font-bold text-white ml-2">면접 기록</h2>
+                        </div>
+
+                        {history.length === 0 ? (
+                            <div className="text-center py-20 text-gray-500">
+                                <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                                <p>아직 진행된 면접 기록이 없습니다.</p>
+                            </div>
+                        ) : (
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {history.map((record, idx) => (
+                                    <div key={idx} className="bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-blue-500 transition-all hover:shadow-lg">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h3 className="font-bold text-lg text-white">{record.role}</h3>
+                                                <p className="text-sm text-gray-400">{record.company}</p>
+                                            </div>
+                                            <div className={`px-3 py-1 rounded-full text-xs font-bold ${record.score >= 80 ? 'bg-green-900 text-green-300' : record.score >= 60 ? 'bg-yellow-900 text-yellow-300' : 'bg-red-900 text-red-300'}`}>
+                                                {record.score}점
+                                            </div>
+                                        </div>
+                                        <div className="text-sm text-gray-300 mb-4 line-clamp-3 bg-gray-900/50 p-3 rounded">
+                                            "{record.summary}"
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs text-gray-500 mt-4 border-t border-gray-700 pt-3">
+                                            <span>{record.date}</span>
+                                            <button className="text-blue-400 hover:text-blue-300 flex items-center">
+                                                상세보기 <ChevronRight className="w-3 h-3 ml-1" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Existing Components (Profile, Plan, Room, Loading, Feedback) ---
+
+        const ProfileSetup = ({ onStart, onViewPlans, selectedPlanName, onHome }) => {
+            const [data, setData] = useState({ github: '', role: '', company: '' });
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-900 text-white relative">
+                    <div className="absolute top-6 right-6 z-20">
+                        <button 
+                            onClick={onViewPlans}
+                            className="flex items-center text-yellow-400 hover:text-yellow-300 font-bold text-sm bg-yellow-400/10 px-4 py-2 rounded-full border border-yellow-400/50 transition-all hover:bg-yellow-400/20"
+                        >
+                            <Crown className="w-4 h-4 mr-2" />
+                            {selectedPlanName ? `${selectedPlanName} 플랜 이용 중` : "구독 플랜 보기"}
+                        </button>
+                    </div>
+
+                    <div className="max-w-md w-full bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 relative z-10">
+                        <h1 className="text-4xl font-black text-green-400 mb-2 neon-text text-center tracking-widest">IntelliView</h1>
+                        <p className="text-gray-400 text-center mb-8">면접자 정보 입력</p>
+
+                        <div className="space-y-6">
+                            <div>
+                                <label className="flex items-center text-sm font-bold text-gray-300 mb-1">
+                                    <Github className="w-4 h-4 mr-2" /> 깃허브 주소
+                                </label>
+                                <div className="flex items-center w-full bg-gray-900 border border-gray-600 rounded-lg focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500 overflow-hidden transition-all">
+                                    <span className="bg-gray-800 text-gray-400 px-3 py-3 border-r border-gray-700 text-sm font-mono whitespace-nowrap select-none">
+                                        https://github.com/
+                                    </span>
+                                    <input 
+                                        type="text" 
+                                        placeholder="username/repo"
+                                        className="flex-1 bg-transparent p-3 text-green-300 placeholder-gray-600 focus:outline-none font-mono"
+                                        value={data.github.replace('https://github.com/', '')}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace('https://github.com/', '');
+                                            setData({...data, github: `https://github.com/${val}`});
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="flex items-center text-sm font-bold text-gray-300 mb-1">
+                                    <Briefcase className="w-4 h-4 mr-2" /> 지원 직무
+                                </label>
+                                <input 
+                                    type="text" 
+                                    placeholder="ex. 프론트엔드 개발자"
+                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-green-500 text-green-300"
+                                    value={data.role}
+                                    onChange={(e) => setData({...data, role: e.target.value})}
+                                />
+                            </div>
+                            <div>
+                                <label className="flex items-center text-sm font-bold text-gray-300 mb-1">
+                                    <Building className="w-4 h-4 mr-2" /> 목표 기업
+                                </label>
+                                <input 
+                                    type="text" 
+                                    placeholder="ex. 네카라쿠배"
+                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-green-500 text-green-300"
+                                    value={data.company}
+                                    onChange={(e) => setData({...data, company: e.target.value})}
+                                />
+                            </div>
+
+                            <button 
+                                onClick={() => {
+                                    if(!data.role || !data.company) return alert("직무와 목표 기업을 입력해주세요.");
+                                    onStart(data);
+                                }}
+                                className="w-full bg-green-600 hover:bg-green-500 text-black font-bold py-4 rounded-lg transition-all transform hover:scale-105 shadow-lg flex justify-center items-center"
+                            >
+                                <Camera className="w-5 h-5 mr-2" /> 면접장 입장
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const PlanSelection = ({ onSelectPlan, onBack }) => {
+            const plans = [
+                { name: "Free", price: "0원", desc: "월 3회 면접, 기본 피드백 제공", recommend: false },
+                { name: "Basic", price: "19,900원", desc: "월 20회 면접, 상세 피드백 리포트", recommend: true },
+                { name: "Pro", price: "39,900원", desc: "무제한 면접, 전문가 1:1 화상 코칭(월2회)", recommend: false }
+            ];
+
+            return (
+                <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8 flex flex-col items-center animate-[fadeIn_0.5s_ease-out]">
+                    <div className="w-full max-w-6xl flex justify-start mb-4">
+                        {/* Internal back button is fine here as it navigates steps, not to home */}
+                    </div>
+                    <div className="max-w-6xl w-full">
+                        <div className="text-center mb-10">
+                            <h2 className="text-3xl font-bold mb-3 text-green-400">맞춤형 구독 플랜</h2>
+                            <p className="text-gray-400">사용자의 니즈와 준비 단계에 따라 최적의 솔루션을 제공합니다.</p>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-6 mb-12">
+                            {plans.map((plan, idx) => (
+                                <div key={idx} className={`plan-card relative bg-gray-800 rounded-xl p-6 border ${plan.recommend ? 'border-green-500 bg-gray-800/80 shadow-[0_0_15px_rgba(0,255,127,0.3)]' : 'border-gray-700'} flex flex-col transition-all cursor-pointer group`}
+                                     onClick={() => onSelectPlan(plan.name)}
+                                >
+                                    {plan.recommend && (<div className="absolute top-0 right-0 bg-green-500 text-black text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">BEST</div>)}
+                                    <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                                    <div className="text-3xl font-black text-green-300 mb-4">{plan.price}</div>
+                                    <p className="text-gray-400 text-sm mb-6 flex-grow">{plan.desc}</p>
+                                    <button className={`w-full py-3 rounded-lg font-bold transition-colors ${plan.recommend ? 'bg-green-500 text-black hover:bg-green-400' : 'bg-gray-700 text-gray-300 group-hover:bg-green-500 group-hover:text-black'}`}>선택하기</button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700 flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div>
+                                <h3 className="text-xl font-bold text-white mb-2 flex items-center">
+                                    <CreditCard className="w-5 h-5 mr-2 text-yellow-400" /> 단건 결제 (Pay-Per-Use)
+                                </h3>
+                                <p className="text-gray-400 text-sm">구독이 부담스럽다면 필요한 만큼만 충전해서 사용하세요.</p>
+                            </div>
+                            <div className="flex flex-wrap gap-4">
+                                <div className="bg-black/30 px-4 py-2 rounded-lg border border-gray-600 text-center hover:border-green-500 cursor-pointer transition-colors" onClick={() => onSelectPlan("1회 면접")}><div className="text-xs text-gray-500">1회 면접</div><div className="font-bold text-green-300">₩9,900</div></div>
+                                <div className="bg-black/30 px-4 py-2 rounded-lg border border-gray-600 text-center hover:border-green-500 cursor-pointer transition-colors" onClick={() => onSelectPlan("5회 패키지")}><div className="text-xs text-gray-500">5회 패키지</div><div className="font-bold text-green-300">₩39,900</div></div>
+                                <div className="bg-black/30 px-4 py-2 rounded-lg border border-gray-600 text-center hover:border-green-500 cursor-pointer transition-colors" onClick={() => onSelectPlan("10회 패키지")}><div className="text-xs text-gray-500">10회 패키지</div><div className="font-bold text-green-300">₩69,900</div></div>
+                            </div>
+                        </div>
+                         <div className="mt-8 text-center text-xs text-gray-500">* 1년차 유료 전환율 5-10% 가정 시, 가입자 1,000명 기준 월 1,000만원-2,000만원 MRR 달성 가능</div>
+                    </div>
+                </div>
+            );
+        };
+
+        const InterviewRoom = ({ userData, onFinish }) => {
+            const videoRef = useRef(null);
+            const [questions, setQuestions] = useState([]);
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [isSpeaking, setIsSpeaking] = useState(false);
+            const [userSpeaking, setUserSpeaking] = useState(false);
+            const [timeLeft, setTimeLeft] = useState(60);
+            
+            useEffect(() => {
+                const qs = generateQuestions(userData.role, userData.company);
+                setQuestions(qs);
+                
+                let localStream = null; // 스트림을 로컬 변수에 저장해두고 cleanup 때 확실히 조지기 위해
+
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                    .then(stream => { 
+                        localStream = stream;
+                        if (videoRef.current) videoRef.current.srcObject = stream; 
+                    })
+                    .catch(err => console.error("Camera access denied:", err));
+                
+                setTimeout(() => speakQuestion(qs[0], 0), 1000);
+
+                // Cleanup Function: 컴포넌트 사라질 때 무조건 실행됨
+                return () => { 
+                    // 1. 카메라/마이크 트랙 중지
+                    if (localStream) {
+                        localStream.getTracks().forEach(track => track.stop());
+                    }
+                    if (videoRef.current && videoRef.current.srcObject) {
+                        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+                    }
+
+                    // 2. 말하고 있던 TTS 취소 (입 다물게 하기)
+                    window.speechSynthesis.cancel();
+                };
+            }, []);
+
+            const speakQuestion = (text, index) => {
+                const synth = window.speechSynthesis;
+                const utterance = new SpeechSynthesisUtterance(text);
+                const persona = voices[index % voices.length];
+                utterance.pitch = persona.pitch;
+                utterance.rate = persona.rate;
+                utterance.lang = "ko-KR";
+                utterance.onstart = () => setIsSpeaking(true);
+                utterance.onend = () => { setIsSpeaking(false); startAnswering(); };
+                synth.speak(utterance);
+            };
+
+            const startAnswering = () => { setUserSpeaking(true); setTimeLeft(60); };
+
+            useEffect(() => {
+                let interval;
+                if (!isSpeaking && userSpeaking && timeLeft > 0) interval = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+                return () => clearInterval(interval);
+            }, [isSpeaking, userSpeaking, timeLeft]);
+
+            const handleNext = () => {
+                if (currentIndex < questions.length - 1) {
+                    setCurrentIndex(prev => prev + 1);
+                    setUserSpeaking(false);
+                    speakQuestion(questions[currentIndex + 1], currentIndex + 1);
+                } else {
+                    onFinish(questions);
+                }
+            };
+
+            return (
+                <div className="h-screen flex flex-col bg-black relative overflow-hidden">
+                    <div className="absolute inset-0 z-0">
+                        <video ref={videoRef} autoPlay muted className="w-full h-full object-cover opacity-60" />
+                        <div className="scan-line"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                    </div>
+                    <div className="relative z-10 flex flex-col justify-between h-full p-6">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-2 bg-red-900/80 px-4 py-1 rounded-full text-red-200 text-sm font-bold border border-red-600">
+                                <div className="w-3 h-3 bg-red-500 rounded-full recording-dot"></div><span>REC</span>
+                            </div>
+                            <div className="text-gray-400 font-mono">Q.{currentIndex + 1} / {questions.length}</div>
+                        </div>
+                        <div className="mt-10">
+                            {isSpeaking && (<div className="flex justify-center mb-4"><div className="bg-green-900/80 text-green-300 px-4 py-2 rounded-full text-sm font-bold border border-green-500 animate-pulse">면접관이 질문하는 중...</div></div>)}
+                            <div className={`transition-all duration-500 transform ${isSpeaking ? 'scale-100 opacity-100' : 'scale-95 opacity-80'} bg-black/70 backdrop-blur-md border-l-4 border-green-500 p-6 rounded-r-lg max-w-2xl mx-auto`}><h2 className="text-2xl font-bold text-white leading-relaxed">{questions[currentIndex]}</h2></div>
+                        </div>
+                        <div className="mb-10 text-center">
+                            {!isSpeaking && (
+                                <div className="mb-6">
+                                    <div className="text-4xl font-mono font-bold text-yellow-500 mb-2">{timeLeft}s</div>
+                                    <div className="flex items-center justify-center space-x-2 h-8">{[...Array(5)].map((_, i) => (<div key={i} className="w-2 bg-green-500 rounded-full animate-bounce" style={{height: `${Math.random() * 20 + 10}px`, animationDelay: `${i * 0.1}s`}}></div>))}</div>
+                                    <p className="text-gray-400 text-sm mt-2">듣고 있다... 계속 떠들어 봐.</p>
+                                </div>
+                            )}
+                            <button onClick={handleNext} className="bg-green-600 hover:bg-green-500 text-black font-bold py-3 px-10 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center mx-auto">{currentIndex < questions.length - 1 ? "다음 질문 드루와" : "면접 종료"} <ChevronRight className="ml-2 w-5 h-5" /></button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AnalysisLoading = ({ onComplete }) => {
+            const [status, setStatus] = useState("영상 데이터 압축 중...");
+            const [progress, setProgress] = useState(0);
+            useEffect(() => {
+                const messages = ["동공 지진 분석 중...", "말 더듬은 횟수 카운팅 중...", "헛소리 필터링 가동...", "팩트 폭격 장전 중...", "분석 완료."];
+                let i = 0;
+                const msgInterval = setInterval(() => { i++; if(i < messages.length) setStatus(messages[i]); }, 1000);
+                const progInterval = setInterval(() => { setProgress(old => { if(old >= 100) { clearInterval(progInterval); clearInterval(msgInterval); setTimeout(onComplete, 500); return 100; } return old + 2; }); }, 50);
+                return () => { clearInterval(msgInterval); clearInterval(progInterval); };
+            }, []);
+            return (
+                <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8 text-center">
+                    <BarChart2 className="w-24 h-24 text-green-500 mb-8 animate-bounce" />
+                    <h2 className="text-2xl font-bold text-white mb-4 animate-pulse">{status}</h2>
+                    <div className="w-full max-w-md h-4 bg-gray-800 rounded-full overflow-hidden border border-gray-700"><div className="h-full bg-green-500 transition-all duration-100 ease-out relative" style={{ width: `${progress}%` }}><div className="absolute inset-0 bg-white/20 w-full h-full animate-[shimmer_1s_infinite]"></div></div></div>
+                    <p className="mt-4 text-gray-500 font-mono">{progress}%</p>
+                </div>
+            );
+        };
+
+        const FeedbackDashboard = ({ userData, questions, onHome }) => {
+            const generateFeedback = (question, index) => {
+                const mockAnswers = ["어... 그게... 저는 열심히 할 수 있고요. 어...", "리액트는... 음... 컴포넌트를 만들어서... 재사용하고... 그...", "우리 회사는... 아니 지원한 회사는... 성장 가능성이... 어...", "실패는... 어... 프로젝트 때 서버가 터졌는데... 당황해서... 어..."];
+                const fillerCount = Math.floor(Math.random() * 8) + 2;
+                const score = Math.floor(Math.random() * 40) + 40; 
+                return {
+                    id: index,
+                    question: question,
+                    userAnswer: mockAnswers[index % mockAnswers.length] + " (답변 내용 요약)",
+                    score: score,
+                    fillerWords: fillerCount,
+                    timeline: [{ time: "00:05", issue: "시선 처리 불안정", type: "video" }, { time: "00:12", issue: "'어...' 추임새 반복 (4회)", type: "audio" }, { time: "00:25", issue: "논리적 인과관계 부족", type: "logic" }],
+                    aiComment: score > 70 ? "전반적으로 논리적인 답변입니다. 다만, 두괄식으로 핵심을 먼저 제시한다면 더욱 설득력 있는 답변이 될 것입니다." : "답변의 구조화가 필요합니다. 습관적인 추임새를 줄이고, 자신감 있는 어조로 명확하게 의사를 전달하는 연습이 필요합니다."
+                };
+            };
+            const reportCards = questions.map((q, i) => generateFeedback(q, i));
+            const totalScore = Math.floor(reportCards.reduce((acc, cur) => acc + cur.score, 0) / reportCards.length);
+
+            // Pass result up to parent for history
+            useEffect(() => {
+                if (onHome && userData) {
+                    // This is handled in App level actually to update history state
+                }
+            }, []);
+
+            return (
+                <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-8">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-gray-700 pb-4">
+                            <div><h1 className="text-3xl font-black text-white mb-2">면접 분석 리포트</h1><p className="text-gray-400">지원자: {userData.role} 지망생</p></div>
+                            <div className="text-right mt-4 md:mt-0"><span className="text-sm text-gray-400">종합 점수</span><div className={`text-5xl font-black ${totalScore < 60 ? 'text-red-500' : 'text-yellow-400'}`}>{totalScore} <span className="text-2xl text-gray-500">/ 100</span></div></div>
+                        </div>
+                        <div className="bg-gray-800 rounded-xl p-6 mb-8 border border-gray-700 shadow-xl">
+                            <h3 className="flex items-center text-lg font-bold text-green-400 mb-3"><Award className="w-5 h-5 mr-2" /> AI 총평</h3>
+                            <p className="text-lg leading-relaxed text-gray-200">{totalScore < 60 ? "시선 처리가 다소 불안정하며, 답변의 핵심 키워드가 명확하지 않습니다. 직무 관련 경험을 구체적인 수치와 함께 제시하여 신뢰도를 높이는 전략이 필요합니다. 모의 면접을 통해 비언어적 요소(시선, 자세)를 교정하는 것을 권장합니다." : "기본적인 직무 역량과 이해도는 우수하나, 이를 표현하는 방식에서 임팩트가 다소 부족합니다. 본인의 경험(GitHub 프로젝트 등)을 지원 동기와 유기적으로 연결하여 차별화된 강점을 어필한다면 더 좋은 결과를 기대할 수 있습니다."}</p>
+                        </div>
+                        <div className="space-y-6">
+                            {reportCards.map((card) => (
+                                <div key={card.id} className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+                                    <div className="bg-gray-700/50 p-4 border-b border-gray-700"><h4 className="font-bold text-white">Q{card.id + 1}. {card.question}</h4></div>
+                                    <div className="p-4 md:p-6 grid md:grid-cols-3 gap-6">
+                                        <div className="md:col-span-2 space-y-4">
+                                            <div><span className="text-xs font-bold text-gray-500 uppercase">Answer Summary</span><p className="text-gray-300 italic mt-1">"{card.userAnswer}"</p></div>
+                                            <div className="bg-red-900/20 border border-red-900/50 rounded p-3"><h5 className="flex items-center text-red-400 font-bold text-sm mb-2"><AlertTriangle className="w-4 h-4 mr-2" /> 개선 필요 사항</h5><ul className="space-y-2">{card.timeline.map((t, idx) => (<li key={idx} className="flex text-sm text-gray-300"><span className="font-mono text-green-500 w-16 bg-gray-900 px-1 rounded mr-2 text-center">{t.time}</span><span>{t.issue}</span></li>))}</ul></div>
+                                        </div>
+                                        <div className="flex flex-col justify-center space-y-4 border-l border-gray-700 pl-6">
+                                            <div><span className="text-sm text-gray-400">답변 점수</span><div className="text-2xl font-bold text-white">{card.score}점</div><div className="w-full bg-gray-900 h-2 rounded mt-1"><div className="h-full bg-green-500 rounded" style={{width: `${card.score}%`}}></div></div></div>
+                                            <div><span className="text-sm text-gray-400">습관적 추임새</span><div className="text-2xl font-bold text-white">{card.fillerWords}회</div><p className="text-xs text-gray-500">("어..", "음..")</p></div>
+                                            <div className="mt-4 pt-4 border-t border-gray-700"><p className="text-sm font-bold text-green-400">AI 코칭:</p><p className="text-xs text-gray-300 mt-1">{card.aiComment}</p></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-10 text-center pb-10">
+                            <button onClick={onHome} className="bg-white hover:bg-gray-200 text-black font-bold py-3 px-8 rounded-full shadow-lg transition-colors flex items-center mx-auto">
+                                <Home className="w-5 h-5 mr-2" /> 메인으로 돌아가기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App Controller ---
+        const App = () => {
+            const [step, setStep] = useState('home'); // home, setup, plan, interview, analyzing, result, history
+            const [userData, setUserData] = useState(null);
+            const [selectedPlan, setSelectedPlan] = useState(null);
+            const [questions, setQuestions] = useState([]);
+            const [history, setHistory] = useState([
+                { date: "2023.10.15", role: "프론트엔드 개발자", company: "네카라쿠배", score: 65, summary: "답변의 구조화가 필요하며, 시선 처리가 불안정함." },
+                { date: "2023.10.20", role: "백엔드 엔지니어", company: "글로벌 테크", score: 82, summary: "기술적 이해도는 높으나 의사소통 명확성 보완 필요." }
+            ]);
+
+            // Navigation Handlers
+            const goHome = () => setStep('home');
+            const goSetup = () => setStep('setup');
+            const goHistory = () => setStep('history');
+            const goPlan = () => setStep('plan');
+
+            const handlePlanSelection = (planName) => { setSelectedPlan(planName); setStep('setup'); };
+            const startInterview = (data) => { setUserData(data); setStep('interview'); };
+            const finishInterview = (qs) => { setQuestions(qs); setStep('analyzing'); };
+            const finishAnalysis = () => { 
+                setStep('result');
+                // Add current session to history
+                const today = new Date().toLocaleDateString('ko-KR');
+                const newRecord = {
+                    date: today,
+                    role: userData.role,
+                    company: userData.company,
+                    score: Math.floor(Math.random() * 20) + 60, // Simulation score
+                    summary: "모의 면접 완료. 상세 피드백을 확인하세요."
+                };
+                setHistory(prev => [newRecord, ...prev]);
+            };
+
+            return (
+                <div className="relative">
+                     {step !== 'home' && (
+                        <button 
+                            onClick={goHome}
+                            className="fixed top-6 left-6 z-50 text-gray-400 hover:text-white transition-colors p-2 bg-black/50 rounded-full border border-gray-700 hover:border-blue-500 backdrop-blur-sm flex items-center group"
+                            title="메인으로 돌아가기"
+                        >
+                            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                            <span className="ml-2 pr-2 text-sm font-bold hidden group-hover:inline-block">메인으로</span>
+                        </button>
+                    )}
+
+                    {step === 'home' && <LandingPage onStart={goSetup} onHistory={goHistory} />}
+                    {step === 'history' && <HistoryPage history={history} onBack={goHome} />}
+                    {step === 'setup' && <ProfileSetup onStart={startInterview} onViewPlans={goPlan} selectedPlanName={selectedPlan} onHome={goHome} />}
+                    {step === 'plan' && <PlanSelection onSelectPlan={handlePlanSelection} onBack={goSetup} />}
+                    {step === 'interview' && <InterviewRoom userData={userData} onFinish={finishInterview} />}
+                    {step === 'analyzing' && <AnalysisLoading onComplete={finishAnalysis} />}
+                    {step === 'result' && <FeedbackDashboard userData={userData} questions={questions} onHome={goHome} />}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
