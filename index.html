@@ -19,38 +19,35 @@
         }
 
         .neon-text { text-shadow: 0 0 10px rgba(0, 255, 127, 0.7); }
-        .scan-line {
-            width: 100%;
-            height: 2px;
-            background: rgba(0, 255, 127, 0.5);
-            position: absolute;
-            animation: scan 3s linear infinite;
-            z-index: 10;
-        }
-        @keyframes scan {
-            0% { top: 0%; }
-            100% { top: 100%; }
-        }
-        .recording-dot {
-            animation: blink 1s infinite;
-        }
-        @keyframes blink {
-            0% { opacity: 1; }
-            50% { opacity: 0.3; }
-            100% { opacity: 1; }
-        }
         .plan-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0, 255, 127, 0.2);
             border-color: #4ade80;
         }
-        /* Fade In Animation */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in {
             animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        /* Interviewer Breathing Animation */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        .interviewer-body {
+            animation: breathe 4s ease-in-out infinite;
+        }
+
+        /* Speaking Mouth Animation */
+        @keyframes talk {
+            0%, 100% { height: 2px; }
+            50% { height: 8px; }
+        }
+        .mouth-moving {
+            animation: talk 0.2s infinite;
         }
     </style>
 </head>
@@ -72,30 +69,33 @@
         const BarChart2 = (props) => (<Icon {...props}><line x1="18" x2="18" y1="20" y2="10" /><line x1="12" x2="12" y1="20" y2="4" /><line x1="6" x2="6" y1="20" y2="14" /></Icon>);
         const Award = (props) => (<Icon {...props}><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></Icon>);
         const AlertTriangle = (props) => (<Icon {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" x2="12" y1="9" y2="13" /><line x1="12" x2="12.01" y1="17" y2="17" /></Icon>);
-        const Mic = (props) => (<Icon {...props}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/><line x1="8" x2="16" y1="22" y2="22"/></Icon>);
         const CreditCard = (props) => (<Icon {...props}><rect width="22" height="16" x="1" y="4" rx="2" ry="2" /><line x1="1" x2="23" y1="10" y2="10" /></Icon>);
         const Crown = (props) => (<Icon {...props}><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" /></Icon>);
         const ArrowLeft = (props) => (<Icon {...props}><line x1="19" x2="5" y1="12" y2="12" /><polyline points="12 19 5 12 12 5" /></Icon>);
         const FileText = (props) => (<Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><line x1="10" x2="8" y1="9" y2="9" /></Icon>);
         const Home = (props) => (<Icon {...props}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>);
+        const Mic = (props) => (<Icon {...props}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/><line x1="8" x2="16" y1="22" y2="22"/></Icon>);
+        const User = (props) => (<Icon {...props}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></Icon>);
 
-        // --- Mock Data Generators ---
-        // 면접 질문 생성 함수: role과 관계없이 항상 프론트엔드 기술 질문 3개를 반환
+        // --- Mock Data ---
         const generateQuestions = (role, company) => {
             const feQuestions = [
                 "브라우저 주소창에 URL을 입력하고 엔터를 쳤을 때, 화면이 렌더링되기까지의 과정을 CS 관점에서 상세히 설명해보세요.",
                 "React의 Virtual DOM이 작동하는 구체적인 원리와, 이것이 실제 DOM 조작보다 효율적인 이유를 설명해보세요.",
                 "프론트엔드 성능 최적화를 위해 본인이 실제로 적용해본 기법은 무엇이며, 그로 인해 성능이 얼마나 개선되었나요?",
                 "JavaScript의 이벤트 루프(Event Loop)와 비동기 처리 메커니즘(Microtask/Macrotask Queue)에 대해 설명해보세요.",
-                `우리 ${company} 서비스의 프론트엔드 기술 스택이나 UI/UX 측면에서 개선이 필요하다고 느낀 점이 있다면 솔직하게 말해보세요.`,
-                "CSS-in-JS와 전통적인 CSS의 장단점을 비교하고, 프로젝트에서 어떤 방식을 선택할지 그 이유를 설명해보세요.",
-                "웹 접근성(Web Accessibility)을 구현하기 위해 어떤 방법들을 사용해보셨나요? 구체적인 예시를 들어 설명해주세요.",
-                "상태 관리 라이브러리(Redux, Zustand, Jotai 등)를 선택할 때 고려하는 요소는 무엇인가요?",
-                "Cross-Site Scripting(XSS) 공격을 방지하기 위한 프론트엔드 보안 기법에 대해 설명해보세요.",
-                "Code Splitting과 Lazy Loading을 통해 번들 크기를 최적화한 경험이 있다면 공유해주세요."
+                `우리 ${company} 서비스의 프론트엔드 기술 스택이나 UI/UX 측면에서 개선이 필요하다고 느낀 점이 있다면 솔직하게 말해보세요.`
             ];
-            // 질문을 랜덤하게 섞어서 3개 선택
-            return feQuestions.sort(() => Math.random() - 0.5).slice(0, 3);
+            const commonQuestions = [
+                "간단하게 자기소개 한번 해보세요. 1분 안으로 짧게.",
+                `${company}에 지원한 솔직한 이유가 뭡니까? 연봉 때문은 아닐 테고.`,
+                "최근에 겪은 가장 큰 기술적 실패 경험과 그걸로 뭘 배웠는지 말해보세요."
+            ];
+            
+            if (role.includes("프론트") || role.includes("Front")) {
+                return feQuestions.sort(() => Math.random() - 0.5).slice(0, 3);
+            }
+            return commonQuestions.sort(() => Math.random() - 0.5).slice(0, 3);
         };
 
         const voices = [
@@ -104,7 +104,7 @@
             { lang: 'ko-KR', pitch: 1.2, rate: 0.9, name: "압박하는 실무자" }
         ];
 
-        // --- New Components: Landing & History ---
+        // --- Components ---
 
         const LandingPage = ({ onStart, onHistory }) => {
             return (
@@ -119,19 +119,13 @@
                         <p className="text-xl text-gray-400 mb-12 tracking-wider">AI 기반 실전 면접 트레이닝 솔루션</p>
 
                         <div className="flex flex-col md:flex-row gap-6 justify-center w-full">
-                            <button 
-                                onClick={onStart}
-                                className="group flex-1 bg-gray-800 hover:bg-gray-700 border border-green-500/50 hover:border-green-400 p-8 rounded-2xl transition-all hover:scale-105 shadow-[0_0_20px_rgba(0,255,127,0.1)] hover:shadow-[0_0_30px_rgba(0,255,127,0.3)] flex flex-col items-center justify-center gap-4"
-                            >
+                            <button onClick={onStart} className="group flex-1 bg-gray-800 hover:bg-gray-700 border border-green-500/50 hover:border-green-400 p-8 rounded-2xl transition-all hover:scale-105 shadow-[0_0_20px_rgba(0,255,127,0.1)] hover:shadow-[0_0_30px_rgba(0,255,127,0.3)] flex flex-col items-center justify-center gap-4">
                                 <Camera className="w-12 h-12 text-green-400 group-hover:text-green-300" />
                                 <div className="text-2xl font-bold text-white group-hover:text-green-300">면접 시작</div>
                                 <span className="text-sm text-gray-500">실전 모의 면접 시작하기</span>
                             </button>
 
-                            <button 
-                                onClick={onHistory}
-                                className="group flex-1 bg-gray-800 hover:bg-gray-700 border border-blue-500/50 hover:border-blue-400 p-8 rounded-2xl transition-all hover:scale-105 shadow-[0_0_20px_rgba(59,130,246,0.1)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] flex flex-col items-center justify-center gap-4"
-                            >
+                            <button onClick={onHistory} className="group flex-1 bg-gray-800 hover:bg-gray-700 border border-blue-500/50 hover:border-blue-400 p-8 rounded-2xl transition-all hover:scale-105 shadow-[0_0_20px_rgba(59,130,246,0.1)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] flex flex-col items-center justify-center gap-4">
                                 <FileText className="w-12 h-12 text-blue-400 group-hover:text-blue-300" />
                                 <div className="text-2xl font-bold text-white group-hover:text-blue-300">면접 기록</div>
                                 <span className="text-sm text-gray-500">지난 분석 리포트 확인</span>
@@ -149,34 +143,18 @@
                         <div className="flex items-center mb-8">
                             <h2 className="text-3xl font-bold text-white ml-2">면접 기록</h2>
                         </div>
-
                         {history.length === 0 ? (
-                            <div className="text-center py-20 text-gray-500">
-                                <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                <p>아직 진행된 면접 기록이 없습니다.</p>
-                            </div>
+                            <div className="text-center py-20 text-gray-500"><FileText className="w-16 h-16 mx-auto mb-4 opacity-30" /><p>아직 진행된 면접 기록이 없습니다.</p></div>
                         ) : (
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {history.map((record, idx) => (
                                     <div key={idx} className="bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-blue-500 transition-all hover:shadow-lg">
                                         <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <h3 className="font-bold text-lg text-white">{record.role}</h3>
-                                                <p className="text-sm text-gray-400">{record.company}</p>
-                                            </div>
-                                            <div className={`px-3 py-1 rounded-full text-xs font-bold ${record.score >= 80 ? 'bg-green-900 text-green-300' : record.score >= 60 ? 'bg-yellow-900 text-yellow-300' : 'bg-red-900 text-red-300'}`}>
-                                                {record.score}점
-                                            </div>
+                                            <div><h3 className="font-bold text-lg text-white">{record.role}</h3><p className="text-sm text-gray-400">{record.company}</p></div>
+                                            <div className={`px-3 py-1 rounded-full text-xs font-bold ${record.score >= 80 ? 'bg-green-900 text-green-300' : record.score >= 60 ? 'bg-yellow-900 text-yellow-300' : 'bg-red-900 text-red-300'}`}>{record.score}점</div>
                                         </div>
-                                        <div className="text-sm text-gray-300 mb-4 line-clamp-3 bg-gray-900/50 p-3 rounded">
-                                            "{record.summary}"
-                                        </div>
-                                        <div className="flex justify-between items-center text-xs text-gray-500 mt-4 border-t border-gray-700 pt-3">
-                                            <span>{record.date}</span>
-                                            <button className="text-blue-400 hover:text-blue-300 flex items-center">
-                                                상세보기 <ChevronRight className="w-3 h-3 ml-1" />
-                                            </button>
-                                        </div>
+                                        <div className="text-sm text-gray-300 mb-4 line-clamp-3 bg-gray-900/50 p-3 rounded">"{record.summary}"</div>
+                                        <div className="flex justify-between items-center text-xs text-gray-500 mt-4 border-t border-gray-700 pt-3"><span>{record.date}</span><button className="text-blue-400 hover:text-blue-300 flex items-center">상세보기 <ChevronRight className="w-3 h-3 ml-1" /></button></div>
                                     </div>
                                 ))}
                             </div>
@@ -186,82 +164,25 @@
             );
         };
 
-        // --- Existing Components (Profile, Plan, Room, Loading, Feedback) ---
-
         const ProfileSetup = ({ onStart, onViewPlans, selectedPlanName, onHome }) => {
             const [data, setData] = useState({ github: '', role: '', company: '' });
 
             return (
                 <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-900 text-white relative">
                     <div className="absolute top-6 right-6 z-20">
-                        <button 
-                            onClick={onViewPlans}
-                            className="flex items-center text-yellow-400 hover:text-yellow-300 font-bold text-sm bg-yellow-400/10 px-4 py-2 rounded-full border border-yellow-400/50 transition-all hover:bg-yellow-400/20"
-                        >
-                            <Crown className="w-4 h-4 mr-2" />
-                            {selectedPlanName ? `${selectedPlanName} 플랜 이용 중` : "구독 플랜 보기"}
+                        <button onClick={onViewPlans} className="flex items-center text-yellow-400 hover:text-yellow-300 font-bold text-sm bg-yellow-400/10 px-4 py-2 rounded-full border border-yellow-400/50 transition-all hover:bg-yellow-400/20">
+                            <Crown className="w-4 h-4 mr-2" />{selectedPlanName ? `${selectedPlanName} 플랜 이용 중` : "구독 플랜 보기"}
                         </button>
                     </div>
 
                     <div className="max-w-md w-full bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 relative z-10">
                         <h1 className="text-4xl font-black text-green-400 mb-2 neon-text text-center tracking-widest">IntelliView</h1>
                         <p className="text-gray-400 text-center mb-8">면접자 정보 입력</p>
-
                         <div className="space-y-6">
-                            <div>
-                                <label className="flex items-center text-sm font-bold text-gray-300 mb-1">
-                                    <Github className="w-4 h-4 mr-2" /> 깃허브 주소
-                                </label>
-                                <div className="flex items-center w-full bg-gray-900 border border-gray-600 rounded-lg focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500 overflow-hidden transition-all">
-                                    <span className="bg-gray-800 text-gray-400 px-3 py-3 border-r border-gray-700 text-sm font-mono whitespace-nowrap select-none">
-                                        https://github.com/
-                                    </span>
-                                    <input 
-                                        type="text" 
-                                        placeholder="username/repo"
-                                        className="flex-1 bg-transparent p-3 text-green-300 placeholder-gray-600 focus:outline-none font-mono"
-                                        value={data.github.replace('https://github.com/', '')}
-                                        onChange={(e) => {
-                                            const val = e.target.value.replace('https://github.com/', '');
-                                            setData({...data, github: `https://github.com/${val}`});
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="flex items-center text-sm font-bold text-gray-300 mb-1">
-                                    <Briefcase className="w-4 h-4 mr-2" /> 지원 직무
-                                </label>
-                                <input 
-                                    type="text" 
-                                    placeholder="ex. 프론트엔드 개발자"
-                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-green-500 text-green-300"
-                                    value={data.role}
-                                    onChange={(e) => setData({...data, role: e.target.value})}
-                                />
-                            </div>
-                            <div>
-                                <label className="flex items-center text-sm font-bold text-gray-300 mb-1">
-                                    <Building className="w-4 h-4 mr-2" /> 목표 기업
-                                </label>
-                                <input 
-                                    type="text" 
-                                    placeholder="ex. 네카라쿠배"
-                                    className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-green-500 text-green-300"
-                                    value={data.company}
-                                    onChange={(e) => setData({...data, company: e.target.value})}
-                                />
-                            </div>
-
-                            <button 
-                                onClick={() => {
-                                    if(!data.role || !data.company) return alert("직무와 목표 기업을 입력해주세요.");
-                                    onStart(data);
-                                }}
-                                className="w-full bg-green-600 hover:bg-green-500 text-black font-bold py-4 rounded-lg transition-all transform hover:scale-105 shadow-lg flex justify-center items-center"
-                            >
-                                <Camera className="w-5 h-5 mr-2" /> 면접장 입장
-                            </button>
+                            <div><label className="flex items-center text-sm font-bold text-gray-300 mb-1"><Github className="w-4 h-4 mr-2" /> 깃허브 주소</label><div className="flex items-center w-full bg-gray-900 border border-gray-600 rounded-lg focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500 overflow-hidden transition-all"><span className="bg-gray-800 text-gray-400 px-3 py-3 border-r border-gray-700 text-sm font-mono whitespace-nowrap select-none">https://github.com/</span><input type="text" placeholder="username/repo" className="flex-1 bg-transparent p-3 text-green-300 placeholder-gray-600 focus:outline-none font-mono" value={data.github.replace('https://github.com/', '')} onChange={(e) => { const val = e.target.value.replace('https://github.com/', ''); setData({...data, github: `https://github.com/${val}`}); }} /></div></div>
+                            <div><label className="flex items-center text-sm font-bold text-gray-300 mb-1"><Briefcase className="w-4 h-4 mr-2" /> 지원 직무</label><input type="text" placeholder="ex. 프론트엔드 개발자" className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-green-500 text-green-300" value={data.role} onChange={(e) => setData({...data, role: e.target.value})} /></div>
+                            <div><label className="flex items-center text-sm font-bold text-gray-300 mb-1"><Building className="w-4 h-4 mr-2" /> 목표 기업</label><input type="text" placeholder="ex. 네카라쿠배" className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:outline-none focus:border-green-500 text-green-300" value={data.company} onChange={(e) => setData({...data, company: e.target.value})} /></div>
+                            <button onClick={() => { if(!data.role || !data.company) return alert("직무와 목표 기업을 입력해주세요."); onStart(data); }} className="w-full bg-green-600 hover:bg-green-500 text-black font-bold py-4 rounded-lg transition-all transform hover:scale-105 shadow-lg flex justify-center items-center"><Camera className="w-5 h-5 mr-2" /> 면접장 입장</button>
                         </div>
                     </div>
                 </div>
@@ -269,55 +190,20 @@
         };
 
         const PlanSelection = ({ onSelectPlan, onBack }) => {
-            const plans = [
-                { name: "Free", price: "0원", desc: "월 3회 면접, 기본 피드백 제공", recommend: false },
-                { name: "Basic", price: "19,900원", desc: "월 20회 면접, 상세 피드백 리포트", recommend: true },
-                { name: "Pro", price: "39,900원", desc: "무제한 면접, 전문가 1:1 화상 코칭(월2회)", recommend: false }
-            ];
-
+            const plans = [{ name: "Free", price: "0원", desc: "월 3회 면접, 기본 피드백 제공", recommend: false }, { name: "Basic", price: "19,900원", desc: "월 20회 면접, 상세 피드백 리포트", recommend: true }, { name: "Pro", price: "39,900원", desc: "무제한 면접, 전문가 1:1 화상 코칭(월2회)", recommend: false }];
             return (
                 <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8 flex flex-col items-center animate-[fadeIn_0.5s_ease-out]">
-                    <div className="w-full max-w-6xl flex justify-start mb-4">
-                        {/* Internal back button is fine here as it navigates steps, not to home */}
-                    </div>
                     <div className="max-w-6xl w-full">
-                        <div className="text-center mb-10">
-                            <h2 className="text-3xl font-bold mb-3 text-green-400">맞춤형 구독 플랜</h2>
-                            <p className="text-gray-400">사용자의 니즈와 준비 단계에 따라 최적의 솔루션을 제공합니다.</p>
-                        </div>
-                        <div className="grid md:grid-cols-3 gap-6 mb-12">
-                            {plans.map((plan, idx) => (
-                                <div key={idx} className={`plan-card relative bg-gray-800 rounded-xl p-6 border ${plan.recommend ? 'border-green-500 bg-gray-800/80 shadow-[0_0_15px_rgba(0,255,127,0.3)]' : 'border-gray-700'} flex flex-col transition-all cursor-pointer group`}
-                                     onClick={() => onSelectPlan(plan.name)}
-                                >
-                                    {plan.recommend && (<div className="absolute top-0 right-0 bg-green-500 text-black text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">BEST</div>)}
-                                    <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                                    <div className="text-3xl font-black text-green-300 mb-4">{plan.price}</div>
-                                    <p className="text-gray-400 text-sm mb-6 flex-grow">{plan.desc}</p>
-                                    <button className={`w-full py-3 rounded-lg font-bold transition-colors ${plan.recommend ? 'bg-green-500 text-black hover:bg-green-400' : 'bg-gray-700 text-gray-300 group-hover:bg-green-500 group-hover:text-black'}`}>선택하기</button>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700 flex flex-col md:flex-row items-center justify-between gap-6">
-                            <div>
-                                <h3 className="text-xl font-bold text-white mb-2 flex items-center">
-                                    <CreditCard className="w-5 h-5 mr-2 text-yellow-400" /> 단건 결제 (Pay-Per-Use)
-                                </h3>
-                                <p className="text-gray-400 text-sm">구독이 부담스럽다면 필요한 만큼만 충전해서 사용하세요.</p>
-                            </div>
-                            <div className="flex flex-wrap gap-4">
-                                <div className="bg-black/30 px-4 py-2 rounded-lg border border-gray-600 text-center hover:border-green-500 cursor-pointer transition-colors" onClick={() => onSelectPlan("1회 면접")}><div className="text-xs text-gray-500">1회 면접</div><div className="font-bold text-green-300">₩9,900</div></div>
-                                <div className="bg-black/30 px-4 py-2 rounded-lg border border-gray-600 text-center hover:border-green-500 cursor-pointer transition-colors" onClick={() => onSelectPlan("5회 패키지")}><div className="text-xs text-gray-500">5회 패키지</div><div className="font-bold text-green-300">₩39,900</div></div>
-                                <div className="bg-black/30 px-4 py-2 rounded-lg border border-gray-600 text-center hover:border-green-500 cursor-pointer transition-colors" onClick={() => onSelectPlan("10회 패키지")}><div className="text-xs text-gray-500">10회 패키지</div><div className="font-bold text-green-300">₩69,900</div></div>
-                            </div>
-                        </div>
-                         <div className="mt-8 text-center text-xs text-gray-500">* 1년차 유료 전환율 5-10% 가정 시, 가입자 1,000명 기준 월 1,000만원-2,000만원 MRR 달성 가능</div>
+                        <div className="text-center mb-10"><h2 className="text-3xl font-bold mb-3 text-green-400">맞춤형 구독 플랜</h2><p className="text-gray-400">사용자의 니즈와 준비 단계에 따라 최적의 솔루션을 제공합니다.</p></div>
+                        <div className="grid md:grid-cols-3 gap-6 mb-12">{plans.map((plan, idx) => (<div key={idx} className={`plan-card relative bg-gray-800 rounded-xl p-6 border ${plan.recommend ? 'border-green-500 bg-gray-800/80 shadow-[0_0_15px_rgba(0,255,127,0.3)]' : 'border-gray-700'} flex flex-col transition-all cursor-pointer group`} onClick={() => onSelectPlan(plan.name)}>{plan.recommend && (<div className="absolute top-0 right-0 bg-green-500 text-black text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">BEST</div>)}<h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3><div className="text-3xl font-black text-green-300 mb-4">{plan.price}</div><p className="text-gray-400 text-sm mb-6 flex-grow">{plan.desc}</p><button className={`w-full py-3 rounded-lg font-bold transition-colors ${plan.recommend ? 'bg-green-500 text-black hover:bg-green-400' : 'bg-gray-700 text-gray-300 group-hover:bg-green-500 group-hover:text-black'}`}>선택하기</button></div>))}</div>
+                        <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700 flex flex-col md:flex-row items-center justify-between gap-6"><div><h3 className="text-xl font-bold text-white mb-2 flex items-center"><CreditCard className="w-5 h-5 mr-2 text-yellow-400" /> 단건 결제 (Pay-Per-Use)</h3><p className="text-gray-400 text-sm">구독이 부담스럽다면 필요한 만큼만 충전해서 사용하세요.</p></div><div className="flex flex-wrap gap-4"><div className="bg-black/30 px-4 py-2 rounded-lg border border-gray-600 text-center hover:border-green-500 cursor-pointer transition-colors" onClick={() => onSelectPlan("1회 면접")}><div className="text-xs text-gray-500">1회 면접</div><div className="font-bold text-green-300">₩9,900</div></div><div className="bg-black/30 px-4 py-2 rounded-lg border border-gray-600 text-center hover:border-green-500 cursor-pointer transition-colors" onClick={() => onSelectPlan("5회 패키지")}><div className="text-xs text-gray-500">5회 패키지</div><div className="font-bold text-green-300">₩39,900</div></div><div className="bg-black/30 px-4 py-2 rounded-lg border border-gray-600 text-center hover:border-green-500 cursor-pointer transition-colors" onClick={() => onSelectPlan("10회 패키지")}><div className="text-xs text-gray-500">10회 패키지</div><div className="font-bold text-green-300">₩69,900</div></div></div></div>
+                        <div className="mt-8 text-center text-xs text-gray-500">* 1년차 유료 전환율 5-10% 가정 시, 가입자 1,000명 기준 월 1,000만원-2,000만원 MRR 달성 가능</div>
                     </div>
                 </div>
             );
         };
 
-        // 면접실 컴포넌트: 가상의 1인칭 시점 면접 시뮬레이션 화면
+        // --- NEW IMMERSIVE INTERVIEW ROOM (1st Person View) ---
         const InterviewRoom = ({ userData, onFinish }) => {
             const [questions, setQuestions] = useState([]);
             const [currentIndex, setCurrentIndex] = useState(0);
@@ -328,13 +214,22 @@
             useEffect(() => {
                 const qs = generateQuestions(userData.role, userData.company);
                 setQuestions(qs);
+
+                // Request camera permission for realism (recording light simulation) but DON'T show video
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                    .then(stream => { 
+                        // Just hold the stream to keep the "recording" light on in browser
+                        window.localStream = stream;
+                    })
+                    .catch(err => console.error("Camera access denied:", err));
                 
-                // 질문 시작
                 setTimeout(() => speakQuestion(qs[0], 0), 1000);
 
-                // Cleanup Function: TTS 취소만 수행
                 return () => { 
                     window.speechSynthesis.cancel();
+                    if (window.localStream) {
+                        window.localStream.getTracks().forEach(track => track.stop());
+                    }
                 };
             }, []);
 
@@ -369,106 +264,90 @@
             };
 
             return (
-                <div className="h-screen flex flex-col bg-gradient-to-b from-slate-900 via-gray-800 to-slate-900 relative overflow-hidden">
-                    {/* 가상 면접실 배경 - 1인칭 시점 */}
-                    <div className="absolute inset-0 z-0">
-                        {/* 회의실 배경 그라데이션 */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-gray-700 to-slate-900"></div>
-                        
-                        {/* 창문 조명 효과 */}
-                        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
-                        <div className="absolute top-0 left-1/4 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl"></div>
-                        
-                        {/* 테이블/책상 효과 (하단 1/3) */}
-                        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-gray-900/80 via-gray-800/60 to-transparent"></div>
-                        
-                        {/* 벽면 패턴 */}
-                        <div className="absolute inset-0 opacity-10">
-                            <div className="absolute top-0 left-0 w-full h-full" style={{
-                                backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)'
-                            }}></div>
+                <div className="h-screen w-full bg-black relative flex flex-col items-center overflow-hidden perspective-1000">
+                    
+                    {/* Background: Dark Office */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-800 to-black z-0">
+                        {/* Windows / Blinds Effect */}
+                        <div className="absolute top-10 left-10 w-40 h-64 bg-blue-900/10 blur-xl transform rotate-y-12"></div>
+                        <div className="absolute top-10 right-10 w-40 h-64 bg-blue-900/10 blur-xl transform -rotate-y-12"></div>
+                    </div>
+
+                    {/* Interviewer Person (Center Stage) */}
+                    <div className="relative z-10 mt-10 md:mt-20 flex flex-col items-center interviewer-body transition-all duration-500">
+                        {/* Head */}
+                        <div className="w-32 h-36 md:w-40 md:h-48 bg-gray-300 rounded-full relative shadow-xl overflow-hidden bg-gradient-to-b from-gray-300 to-gray-400">
+                            {/* Hair hint */}
+                            <div className="absolute top-0 w-full h-10 bg-gray-800"></div>
+                            {/* Eyes */}
+                            <div className="absolute top-16 left-8 w-3 h-3 bg-gray-800 rounded-full animate-pulse"></div>
+                            <div className="absolute top-16 right-8 w-3 h-3 bg-gray-800 rounded-full animate-pulse"></div>
+                            {/* Glasses (Optional) */}
+                            <div className="absolute top-14 left-6 w-8 h-6 border-2 border-black rounded opacity-50"></div>
+                            <div className="absolute top-14 right-6 w-8 h-6 border-2 border-black rounded opacity-50"></div>
+                            <div className="absolute top-16 left-14 w-4 h-1 bg-black opacity-50"></div>
+                            {/* Mouth */}
+                            <div className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 w-10 bg-gray-700 rounded-full transition-all duration-75 ${isSpeaking ? 'mouth-moving' : 'h-1'}`}></div>
+                        </div>
+                        {/* Body / Suit */}
+                        <div className="w-64 h-48 md:w-80 md:h-60 bg-gray-800 rounded-t-[4rem] -mt-4 shadow-2xl flex justify-center relative">
+                            {/* Shirt Triangle */}
+                            <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[60px] border-t-white mt-2"></div>
+                            {/* Tie */}
+                            <div className="absolute top-2 w-4 h-24 bg-red-800 rounded-b-lg"></div>
+                            {/* Name Tag */}
+                            <div className="absolute top-20 right-10 bg-yellow-500 text-black text-[10px] px-2 py-1 rounded shadow transform rotate-3 font-bold">면접관</div>
                         </div>
                     </div>
 
-                    {/* 메인 콘텐츠 영역 */}
-                    <div className="relative z-10 flex flex-col h-full">
-                        {/* 상단 헤더 */}
-                        <div className="flex justify-between items-center p-6 border-b border-gray-700/50 bg-gray-900/30 backdrop-blur-sm">
-                            <div className="text-gray-300 font-mono text-sm">
-                                면접 진행 중
-                            </div>
-                            <div className="text-gray-400 font-mono text-sm">
-                                Q.{currentIndex + 1} / {questions.length}
-                            </div>
+                    {/* Desk (Foreground) - The "1st Person" element */}
+                    <div className="absolute bottom-0 w-full h-1/3 bg-[#2a1a10] z-20 shadow-2xl flex justify-center items-end border-t-8 border-[#3e2718]">
+                        {/* Wood Texture Gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                        
+                        {/* Papers on Desk */}
+                        <div className="absolute bottom-10 left-10 md:left-32 w-48 h-60 bg-white transform rotate-6 shadow-md p-4 text-[8px] text-gray-400 hidden md:block">
+                            <div className="w-full h-2 bg-gray-200 mb-2"></div>
+                            <div className="w-2/3 h-2 bg-gray-200 mb-4"></div>
+                            <div className="w-full h-1 bg-gray-200 mb-1"></div>
+                            <div className="w-full h-1 bg-gray-200 mb-1"></div>
+                            <div className="w-full h-1 bg-gray-200 mb-1"></div>
+                            <div className="font-bold text-gray-800 mt-4 text-xs">RESUME</div>
+                            <div>{userData.role}</div>
                         </div>
 
-                        {/* 중앙 영역: 면접관 아바타 + 질문 */}
-                        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
-                            {/* 면접관 아바타 영역 */}
-                            <div className="mb-8 flex flex-col items-center">
-                                <div className={`relative transition-all duration-500 ${isSpeaking ? 'scale-105' : 'scale-100'}`}>
-                                    {/* 면접관 아바타 (원형 프로필) */}
-                                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 border-4 border-gray-500 shadow-2xl flex items-center justify-center relative overflow-hidden">
-                                        {/* 아바타 내부 패턴 */}
-                                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20"></div>
-                                        {/* 초기 이니셜 또는 아이콘 */}
-                                        <div className="relative z-10 text-4xl font-bold text-gray-300">👔</div>
-                                        {/* 말하는 중 애니메이션 */}
-                                        {isSpeaking && (
-                                            <div className="absolute inset-0 border-4 border-blue-400 rounded-full animate-ping opacity-75"></div>
-                                        )}
-                                    </div>
-                                    {/* 아바타 하단 이름/역할 */}
-                                    <div className="mt-4 text-center">
-                                        <div className="text-white font-semibold text-lg">면접관</div>
-                                        <div className="text-gray-400 text-sm mt-1">{userData.company} 채용 담당</div>
-                                    </div>
-                                </div>
+                        {/* User's Virtual Mic */}
+                        <div className="absolute bottom-0 right-10 md:right-32 w-24 h-40 flex flex-col items-center">
+                            <div className={`w-12 h-20 rounded-full border-4 border-gray-600 bg-gray-800 grid place-items-center transition-all ${userSpeaking && !isSpeaking ? 'shadow-[0_0_20px_rgba(59,130,246,0.6)] border-blue-500' : ''}`}>
+                                <div className="w-full h-full bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,#333_3px)] opacity-50"></div>
                             </div>
-
-                            {/* 질문 표시 영역 */}
-                            <div className="w-full max-w-3xl">
-                                {isSpeaking && (
-                                    <div className="flex justify-center mb-4">
-                                        <div className="bg-blue-900/80 text-blue-200 px-4 py-2 rounded-full text-sm font-semibold border border-blue-500/50 animate-pulse">
-                                            면접관이 질문하는 중...
-                                        </div>
-                                    </div>
-                                )}
-                                <div className={`transition-all duration-500 transform ${isSpeaking ? 'scale-100 opacity-100' : 'scale-98 opacity-90'} bg-gray-900/80 backdrop-blur-md border-l-4 ${isSpeaking ? 'border-blue-500' : 'border-gray-600'} p-8 rounded-r-lg shadow-2xl`}>
-                                    <h2 className="text-2xl md:text-3xl font-bold text-white leading-relaxed">
-                                        {questions[currentIndex]}
-                                    </h2>
-                                </div>
-                            </div>
+                            <div className="w-2 h-10 bg-gray-700"></div>
+                            <div className="w-16 h-4 bg-gray-800 rounded-t-lg"></div>
                         </div>
 
-                        {/* 하단 컨트롤 영역 */}
-                        <div className="pb-8 px-6">
-                            <div className="max-w-3xl mx-auto">
-                                {!isSpeaking && userSpeaking && (
-                                    <div className="mb-6 text-center">
-                                        <div className="text-5xl font-mono font-bold text-amber-400 mb-3">{timeLeft}s</div>
-                                        <div className="flex items-center justify-center space-x-2 h-10 mb-2">
-                                            {[...Array(5)].map((_, i) => (
-                                                <div 
-                                                    key={i} 
-                                                    className="w-2 bg-blue-500 rounded-full animate-bounce" 
-                                                    style={{
-                                                        height: `${Math.random() * 20 + 10}px`, 
-                                                        animationDelay: `${i * 0.1}s`
-                                                    }}
-                                                ></div>
-                                            ))}
-                                        </div>
-                                        <p className="text-gray-400 text-sm">답변 시간이 진행 중입니다</p>
+                        {/* Subtitles / Question Display */}
+                        <div className="absolute bottom-20 w-full max-w-3xl px-4 text-center">
+                            {isSpeaking && (
+                                <div className="mb-4 inline-block px-4 py-1 bg-blue-600/80 text-white text-sm rounded-full animate-pulse">
+                                    면접관이 질문 중입니다...
+                                </div>
+                            )}
+                            <div className="bg-black/70 backdrop-blur-md text-white p-6 rounded-xl border-t border-white/10 shadow-2xl">
+                                <h3 className="text-xl md:text-2xl font-medium leading-relaxed">"{questions[currentIndex]}"</h3>
+                            </div>
+                            
+                            {/* Controls */}
+                            <div className="mt-6 flex justify-center items-center gap-6">
+                                {userSpeaking && !isSpeaking && (
+                                    <div className="text-yellow-400 font-mono text-xl font-bold animate-pulse">
+                                        남은 시간: {timeLeft}s
                                     </div>
                                 )}
                                 <button 
-                                    onClick={handleNext} 
-                                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-lg shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center mx-auto"
+                                    onClick={handleNext}
+                                    className="bg-white hover:bg-gray-200 text-black font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center"
                                 >
-                                    {currentIndex < questions.length - 1 ? "다음 질문" : "면접 종료"}
+                                    {currentIndex < questions.length - 1 ? "다음 질문으로 넘어가기" : "면접 종료"}
                                     <ChevronRight className="ml-2 w-5 h-5" />
                                 </button>
                             </div>
@@ -515,13 +394,6 @@
             };
             const reportCards = questions.map((q, i) => generateFeedback(q, i));
             const totalScore = Math.floor(reportCards.reduce((acc, cur) => acc + cur.score, 0) / reportCards.length);
-
-            // Pass result up to parent for history
-            useEffect(() => {
-                if (onHome && userData) {
-                    // This is handled in App level actually to update history state
-                }
-            }, []);
 
             return (
                 <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-8">
@@ -573,7 +445,6 @@
                 { date: "2023.10.20", role: "백엔드 엔지니어", company: "글로벌 테크", score: 82, summary: "기술적 이해도는 높으나 의사소통 명확성 보완 필요." }
             ]);
 
-            // Navigation Handlers
             const goHome = () => setStep('home');
             const goSetup = () => setStep('setup');
             const goHistory = () => setStep('history');
@@ -584,13 +455,12 @@
             const finishInterview = (qs) => { setQuestions(qs); setStep('analyzing'); };
             const finishAnalysis = () => { 
                 setStep('result');
-                // Add current session to history
                 const today = new Date().toLocaleDateString('ko-KR');
                 const newRecord = {
                     date: today,
                     role: userData.role,
                     company: userData.company,
-                    score: Math.floor(Math.random() * 20) + 60, // Simulation score
+                    score: Math.floor(Math.random() * 20) + 60, 
                     summary: "모의 면접 완료. 상세 피드백을 확인하세요."
                 };
                 setHistory(prev => [newRecord, ...prev]);
